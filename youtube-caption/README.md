@@ -35,10 +35,9 @@ Navigate to **Keys and Endpoints**, then copy the **Key** and **Endpoint** value
 In the **backend** folder, create a `.env` file and add the copied keys and endpoints.  
 Example:
 ```env
-SPEECH_KEY=your_speech_service_key
-SPEECH_ENDPOINT=your_speech_service_endpoint
-TRANSLATOR_KEY=your_translator_key
-TRANSLATOR_ENDPOINT=your_translator_endpoint
+AZURE_SPEECH_KEY=your_speech_service_key
+AZURE_TRANSLATOR_KEY =your_translator_key
+AZURE_SPEECH_REGION = eastus
 ```
 
 ---
