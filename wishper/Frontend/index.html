@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎙️ Live Speech to Text</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 { color: #00ffcc; }
+    button {
+      background: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    button:disabled {
+      background: #444;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    #transcript {
+      margin-top: 30px;
+      font-size: 1.4em;
+      width: 80%;
+      text-align: center;
+      min-height: 100px;
+      border: 1px solid #444;
+      border-radius: 10px;
+      padding: 15px;
+      background: #1e1e1e;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎤 Live Speech to Text</h1>
+  <button id="recordBtn">Start Recording</button>
+  <div id="transcript">Your words will appear here...</div>
+
+  <script>
+    const recordBtn = document.getElementById("recordBtn");
+    const transcriptDiv = document.getElementById("transcript");
+    let mediaRecorder;
+    let audioChunks = [];
+
+    recordBtn.addEventListener("click", async () => {
+      if (recordBtn.textContent === "Start Recording") {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    });
+
+    async function startRecording() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const formData = new FormData();
+        formData.append("file", audioBlob, "speech.wav");
+
+        transcriptDiv.innerHTML = "⏳ Transcribing...";
+        const response = await fetch("http://127.0.0.1:8000/transcribe", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        transcriptDiv.innerHTML = data.text || "❌ Error transcribing audio.";
+      };
+
+      mediaRecorder.start();
+      recordBtn.textContent = "Stop Recording";
+      transcriptDiv.innerHTML = "🎙️ Listening...";
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+      recordBtn.textContent = "Start Recording";
+    }
+  </script>
+</body>
+</html>
