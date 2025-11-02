@@ -1,0 +1,445 @@
+{
+  "name": "Upsert Intercom knowledge into vector DB alter",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.chatInput }}",
+        "options": {
+          "systemMessage": "# System Prompt for RAG-Enhanced AI Assistant\n\nYou are an intelligent assistant with access to a knowledge base of PDF documents. Your role is to provide accurate, helpful, and contextually relevant answers based on both the retrieved document chunks and your general knowledge.\n\n## Core Instructions\n\n### 1. Using Retrieved Context\n- You will receive relevant document chunks retrieved from a vector database based on the user's query\n- Each chunk contains: document title, description, chunk text, source file name, and relevance score\n- **Always prioritize information from the retrieved context when answering questions**\n- If the context contains relevant information, cite the source document by name\n\n### 2. Answer Quality Guidelines\n- **Be accurate**: Only make claims you can support with the provided context or your knowledge\n- **Be specific**: Use exact details, numbers, and quotes from the retrieved chunks when available\n- **Be concise**: Provide direct answers, then elaborate if needed\n- **Be honest**: If the retrieved context doesn't contain enough information to answer fully, say so clearly\n\n### 3. Citation Requirements\n- When using information from retrieved documents, always cite the source\n- Format: \"According to [document_name], ...\" or \"Based on [document_name], ...\"\n- If multiple documents contain relevant info, mention all sources\n- If information comes from your general knowledge (not the documents), state this clearly\n\n### 4. Handling Uncertainty\n- If retrieved chunks don't contain relevant information: \"I don't see information about that in the available documents.\"\n- If information is partial: \"Based on the available documents, I can tell you [X], but I don't have information about [Y].\"\n- If context contradicts your knowledge: Prioritize the document context and note any discrepancies if relevant\n\n### 5. Context Format\nRetrieved document chunks will be provided in this format:\n```\n--- Document Chunk ---\nTitle: [document title]\nSource: [file_name]\nRelevance Score: [similarity score]\nContent: [chunk_text]\n---\n```\n\n### 6. Response Structure\n1. **Direct Answer**: Start with a clear, direct response to the question\n2. **Supporting Details**: Elaborate with specific information from the documents\n3. **Source Attribution**: Cite which document(s) provided the information\n4. **Additional Context**: Add helpful context or related information if relevant\n5. **Limitations**: Note if information is incomplete or if you need clarification\n\n## Special Scenarios\n\n### No Relevant Context Retrieved\n\"I don't have information about that in the available documents. However, based on my general knowledge, [provide general answer if appropriate, or suggest what documents might be helpful].\"\n\n### Conflicting Information\n\"I found different information across documents: [Document A] states [X], while [Document B] indicates [Y]. Could you clarify which aspect you're most interested in?\"\n\n### Partial Information\n\"Based on [document_name], I can tell you that [available info]. However, I don't see details about [missing info] in the current documents.\"\n\n### Price/Product Queries\nWhen answering questions about products, prices, or specifications, always cite the specific document and provide exact values as stated.\n\n## Best Practices\n- Read all retrieved chunks before formulating your answer\n- Synthesize information from multiple chunks if needed\n- Don't hallucinate or invent information not in the context\n- Ask clarifying questions if the user's query is ambiguous\n- Maintain a helpful, professional tone\n- Format lists, tables, or structured data clearly when presenting information from documents\n\n## Remember\nYour primary value is combining the retrieved document knowledge with your reasoning abilities to provide accurate, well-sourced answers. Always distinguish between what comes from the documents versus your general knowledge."
+        }
+      },
+      "id": "483d197e-b94e-413c-bdf3-22dd10216320",
+      "name": "Knowledge Base Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        48,
+        496
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "e4bf94c3-d0f0-48c4-94ae-bacf1eb42a3a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -16,
+        816
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "YXNrT2HOPokT81Ll",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "af1643bc-f05a-44ec-8db8-55f778dd34bd",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        624,
+        1008
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "YXNrT2HOPokT81Ll",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "productDocs",
+        "toolDescription": "retreive documentation",
+        "mongoCollection": {
+          "__rl": true,
+          "value": "abc",
+          "mode": "list",
+          "cachedResultName": "abc"
+        },
+        "vectorIndexName": "vector_index",
+        "options": {}
+      },
+      "id": "3980e123-3d3c-4dee-a6c0-54733a957cfe",
+      "name": "MongoDB Vector Search",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMongoDBAtlas",
+      "position": [
+        544,
+        816
+      ],
+      "typeVersion": 1.1,
+      "credentials": {
+        "mongoDb": {
+          "id": "uyMEp4NgxfINyLsK",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length || !items[0].binary) {\n  throw new Error('No binary data received');\n}\n\nconst binaryKeys = Object.keys(items[0].binary);\nif (!binaryKeys.length) {\n  throw new Error('No binary fields found');\n}\nconst pdfBinaryKey = binaryKeys[0];\nconst pdfData = items[0].binary[pdfBinaryKey]?.data;\n\nif (!pdfData) {\n  throw new Error('No PDF file uploaded');\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -16
+      ],
+      "id": "3939f31d-175b-48ed-889b-431382984e69",
+      "name": "Extract PDF Data"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "pdf_file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -16
+      ],
+      "id": "a33ccb44-f5e4-4c8c-8fd3-293f2c97607b",
+      "name": "Extract Text from PDF"
+    },
+    {
+      "parameters": {
+        "formTitle": "pdf",
+        "formDescription": "pdf",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "pdf file",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -352,
+        -16
+      ],
+      "id": "25fcc745-2f99-41c3-a29b-ea82246a199e",
+      "name": "On form submission",
+      "webhookId": "10d3f3b6-9adf-46a0-80f3-642924b51859"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chunk the document text into smaller pieces\nconst items = $input.all();\nconst output = [];\n\n// Chunking parameters\nconst CHUNK_SIZE = 500; // characters per chunk\nconst OVERLAP = 50; // character overlap between chunks\n\nfor (const item of items) {\n  const text = item.json.body_text || '';\n  const chunks = [];\n  \n  // Split text into chunks\n  let startPos = 0;\n  let chunkIndex = 0;\n  \n  while (startPos < text.length) {\n    const endPos = Math.min(startPos + CHUNK_SIZE, text.length);\n    const chunkText = text.substring(startPos, endPos).trim();\n    \n    if (chunkText) {\n      chunks.push({\n        json: {\n          ...item.json,\n          chunk_index: chunkIndex,\n          chunk_text: chunkText,\n          preview: chunkText.substring(0, 100) + (chunkText.length > 100 ? '...' : '')\n        }\n      });\n      chunkIndex++;\n    }\n    \n    startPos += CHUNK_SIZE - OVERLAP;\n  }\n  \n  output.push(...chunks);\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -16
+      ],
+      "id": "547ef90d-ed97-401c-be4c-3c92f251a41c",
+      "name": "Chunk Document Text"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        -16
+      ],
+      "id": "0f94a83e-fee8-496a-bdbb-ad3372c5220b",
+      "name": "Process Chunks Loop"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process extracted PDF text and prepare metadata\nconst items = $input.all();\nconst output = [];\n\nfor (const item of items) {\n  const extractedText = item.json.body_text || item.json.text || '';\n  const fileName = item.json.file_name || item.binary?.data?.fileName || 'unknown.pdf';\n  const mimeType = item.json.mime_type || item.binary?.data?.mimeType || 'application/pdf';\n  \n  // Get current timestamp\n  const now = Math.floor(Date.now() / 1000);\n  \n  output.push({\n    json: {\n      document_id: fileName.replace('.pdf', ''),\n      title: item.json.title || fileName,\n      description: item.json.description || `Extracted from PDF: ${fileName}`,\n      body_text: extractedText,\n      url: item.json.url || '',\n      created_at: item.json.created_at || now,\n      updated_at: item.json.updated_at || now,\n      source: item.json.source || 'pdf_upload',\n      file_name: fileName,\n      mime_type: mimeType\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "6c95cfc4-e911-4f7f-89a4-56eb833c09ed",
+      "name": "Prepare Document Metadata1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"text-embedding-3-small\",\n  \"input\": {{ JSON.stringify('Title: ' + $json.title + '\\nDescription: ' + $json.description + '\\nContent: ' + $json.chunk_text) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "60e28ec9-cfd3-428a-ac0c-1e6d41af5b11",
+      "name": "Generate Embedding1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YXNrT2HOPokT81Ll",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract embedding from OpenAI response and attach to chunk\nconst embeddingResponse = $input.first().json;\nconst chunkData = $('Process Chunks Loop').first().json;\n\n// Extract embedding vector from response\nlet vector = null;\n\nif (embeddingResponse.data && Array.isArray(embeddingResponse.data) && embeddingResponse.data[0]?.embedding) {\n  vector = embeddingResponse.data[0].embedding;\n} else if (Array.isArray(embeddingResponse) && embeddingResponse[0]?.embedding) {\n  vector = embeddingResponse[0].embedding;\n} else if (embeddingResponse.embedding) {\n  vector = embeddingResponse.embedding;\n}\n\nif (!Array.isArray(vector) || vector.length === 0) {\n  throw new Error('Could not extract embedding vector from OpenAI response');\n}\n\nreturn [{\n  json: {\n    document_id: chunkData.document_id,\n    title: chunkData.title,\n    description: chunkData.description,\n    url: chunkData.url,\n    created_at: chunkData.created_at,\n    updated_at: chunkData.updated_at,\n    chunk_index: chunkData.chunk_index,\n    chunk_text: chunkData.chunk_text,\n    preview: chunkData.preview,\n    source: chunkData.source,\n    file_name: chunkData.file_name,\n    mime_type: chunkData.mime_type,\n    embedding: vector\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        160
+      ],
+      "id": "c0aa292f-c111-40f1-89b7-35590aba3f94",
+      "name": "Attach Embedding to Chunk1"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "abc",
+        "fields": "document_id,title,description,url,created_at,updated_at,chunk_index,chunk_text,preview,source,file_name,mime_type,embedding",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        -256
+      ],
+      "id": "10a4f93b-c870-49aa-aacb-9003cfdadef0",
+      "name": "Save to MongoDB1",
+      "credentials": {
+        "mongoDb": {
+          "id": "uyMEp4NgxfINyLsK",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "92c79941-aa33-4f61-8086-632d8497d53b",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        496
+      ],
+      "id": "aa918dbf-7aa8-4145-a1b6-f5f303433a23",
+      "name": "Webhook",
+      "webhookId": "92c79941-aa33-4f61-8086-632d8497d53b"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        464,
+        496
+      ],
+      "id": "d11e7a24-ea20-4fd6-807c-8b0e3db03103",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "MongoDB Vector Search",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Knowledge Base Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB Vector Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Knowledge Base Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from PDF": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document Metadata1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Document Text": {
+      "main": [
+        [
+          {
+            "node": "Process Chunks Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Chunks Loop": {
+      "main": [
+        [
+          {
+            "node": "Save to MongoDB1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Document Metadata1": {
+      "main": [
+        [
+          {
+            "node": "Chunk Document Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding1": {
+      "main": [
+        [
+          {
+            "node": "Attach Embedding to Chunk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Embedding to Chunk1": {
+      "main": [
+        [
+          {
+            "node": "Process Chunks Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to MongoDB1": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Base Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ec941190-9ca3-4aa9-831a-06d79dce32ed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c01fbbe5c1790d76a277128868101abaa1f88cb27384dd91356be738264134b3"
+  },
+  "id": "hd0rPMR2bpdfAbRH",
+  "tags": []
+}
