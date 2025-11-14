@@ -275,11 +275,4 @@ This video will contain:
 
 ---
 
-# 💬 Need More Help?
-Ask me to:
-- Add DeepSORT tracking
-- Add lane detection
-- Add distance measurement between vehicles
-- Make a GUI for uploading videos
 
-I’m here to help you build the full proj
