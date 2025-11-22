@@ -1,0 +1,2 @@
+Hello from greeting.txt – this file is being read through MCP!
+haii hayyyy
