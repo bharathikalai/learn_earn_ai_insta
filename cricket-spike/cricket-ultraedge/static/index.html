@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UltraEdge - Cricket Impact Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="header">
+      <div class="brand">
+        <span class="brand-title">ULTRAEDGE</span>
+        <span class="brand-subtitle">Cricket Impact Analyzer</span>
+      </div>
+      <div class="status-pill" id="status-pill">Idle</div>
+    </header>
+
+    <main class="main">
+      <section class="left-panel">
+        <div class="upload-card">
+          <h2>Upload Audio</h2>
+          <p class="hint">
+            Drop a short audio clip of the delivery (WAV recommended).
+          </p>
+
+          <label for="fileInput" class="dropzone" id="dropzone">
+            <span id="dropzone-text">Click to select or drop audio file here</span>
+            <input type="file" id="fileInput" accept="audio/*" hidden>
+          </label>
+
+          <div class="controls">
+            <button id="playButton" disabled>▶ Play</button>
+            <button id="stopButton" disabled>⏹ Stop</button>
+          </div>
+
+          <div class="file-info">
+            <span id="fileName">No file selected</span>
+          </div>
+        </div>
+
+        <div class="prediction-card">
+          <h2>Prediction</h2>
+          <div class="prediction-label" id="predictionLabel">
+            —
+          </div>
+          <div class="confidence-text" id="confidenceText">
+            Upload audio to analyze.
+          </div>
+          <div class="probabilities" id="probabilities"></div>
+        </div>
+      </section>
+
+      <section class="right-panel">
+        <h2>Waveform</h2>
+        <div class="waveform-container">
+          <canvas id="waveformCanvas"></canvas>
+        </div>
+        <p class="hint small">
+          The waveform spike pattern is similar to what you see in TV UltraEdge.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Demo UltraEdge-style UI • Powered by your ML model 🏏</span>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "you are the ai chat bot assistent"
+        }
+      },
+      "id": "288a5d79-9d3a-4d30-b14e-a9f40688a410",
+      "name": "Knowledge Base Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -1040,
+        1040
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "926629a4-35b4-494b-8943-275e357934a5",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -1104,
+        1360
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "EndkC3q55QQ0Wo3d",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "da0f0e92-7b51-47e4-85a1-a4876bc69860",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        -464,
+        1552
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "EndkC3q55QQ0Wo3d",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "productDocs",
+        "toolDescription": "retreive documentation",
+        "mongoCollection": {
+          "__rl": true,
+          "value": "abc",
+          "mode": "list",
+          "cachedResultName": "abc"
+        },
+        "vectorIndexName": "abc",
+        "options": {}
+      },
+      "id": "c15f639d-cbdf-4e1d-bfb2-d30b09a29ab2",
+      "name": "MongoDB Vector Search",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMongoDBAtlas",
+      "position": [
+        -544,
+        1360
+      ],
+      "typeVersion": 1.1,
+      "credentials": {
+        "mongoDb": {
+          "id": "ZzJUXMnHIa1TDYUK",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length || !items[0].binary) {\n  throw new Error('No binary data received');\n}\n\nconst binaryKeys = Object.keys(items[0].binary);\nif (!binaryKeys.length) {\n  throw new Error('No binary fields found');\n}\nconst pdfBinaryKey = binaryKeys[0];\nconst pdfData = items[0].binary[pdfBinaryKey]?.data;\n\nif (!pdfData) {\n  throw new Error('No PDF file uploaded');\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1264,
+        544
+      ],
+      "id": "3dc3e843-9df7-49bf-a7d4-456848b9343f",
+      "name": "Extract PDF Data"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "upload_your_file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        544
+      ],
+      "id": "a0b60d02-8734-4db2-b762-8200af39c5a3",
+      "name": "Extract Text from PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chunk the document text into smaller pieces\nconst items = $input.all();\nconst output = [];\n\n// Chunking parameters\nconst CHUNK_SIZE = 500; // characters per chunk\nconst OVERLAP = 50; // character overlap between chunks\n\nfor (const item of items) {\n  const text = item.json.body_text || '';\n  const chunks = [];\n  \n  // Split text into chunks\n  let startPos = 0;\n  let chunkIndex = 0;\n  \n  while (startPos < text.length) {\n    const endPos = Math.min(startPos + CHUNK_SIZE, text.length);\n    const chunkText = text.substring(startPos, endPos).trim();\n    \n    if (chunkText) {\n      chunks.push({\n        json: {\n          ...item.json,\n          chunk_index: chunkIndex,\n          chunk_text: chunkText,\n          preview: chunkText.substring(0, 100) + (chunkText.length > 100 ? '...' : '')\n        }\n      });\n      chunkIndex++;\n    }\n    \n    startPos += CHUNK_SIZE - OVERLAP;\n  }\n  \n  output.push(...chunks);\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        544
+      ],
+      "id": "a9654ef7-3ba1-4b22-aef4-e7a104dff2da",
+      "name": "Chunk Document Text"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -272,
+        544
+      ],
+      "id": "42b3ba13-509e-45c9-aa99-85df2544869e",
+      "name": "Process Chunks Loop"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process extracted PDF text and prepare metadata\nconst items = $input.all();\nconst output = [];\n\nfor (const item of items) {\n  const extractedText = item.json.body_text || item.json.text || '';\n  const fileName = item.json.file_name || item.binary?.data?.fileName || 'unknown.pdf';\n  const mimeType = item.json.mime_type || item.binary?.data?.mimeType || 'application/pdf';\n  \n  // Get current timestamp\n  const now = Math.floor(Date.now() / 1000);\n  \n  output.push({\n    json: {\n      document_id: fileName.replace('.pdf', ''),\n      title: item.json.title || fileName,\n      description: item.json.description || `Extracted from PDF: ${fileName}`,\n      body_text: extractedText,\n      url: item.json.url || '',\n      created_at: item.json.created_at || now,\n      updated_at: item.json.updated_at || now,\n      source: item.json.source || 'pdf_upload',\n      file_name: fileName,\n      mime_type: mimeType\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        544
+      ],
+      "id": "2d2445ef-06cc-470d-b2b1-913dc397a3d4",
+      "name": "Prepare Document Metadata1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"text-embedding-3-small\",\n  \"input\": {{ JSON.stringify('Title: ' + $json.title + '\\nDescription: ' + $json.description + '\\nContent: ' + $json.chunk_text) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        560
+      ],
+      "id": "568b6e1f-7a4a-46a6-ada3-f348392e575f",
+      "name": "Generate Embedding1",
+      "credentials": {
+        "openAiApi": {
+          "id": "EndkC3q55QQ0Wo3d",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract embedding from OpenAI response and attach to chunk\nconst embeddingResponse = $input.first().json;\nconst chunkData = $('Process Chunks Loop').first().json;\n\n// Extract embedding vector from response\nlet vector = null;\n\nif (embeddingResponse.data && Array.isArray(embeddingResponse.data) && embeddingResponse.data[0]?.embedding) {\n  vector = embeddingResponse.data[0].embedding;\n} else if (Array.isArray(embeddingResponse) && embeddingResponse[0]?.embedding) {\n  vector = embeddingResponse[0].embedding;\n} else if (embeddingResponse.embedding) {\n  vector = embeddingResponse.embedding;\n}\n\nif (!Array.isArray(vector) || vector.length === 0) {\n  throw new Error('Could not extract embedding vector from OpenAI response');\n}\n\nreturn [{\n  json: {\n    document_id: chunkData.document_id,\n    title: chunkData.title,\n    description: chunkData.description,\n    url: chunkData.url,\n    created_at: chunkData.created_at,\n    updated_at: chunkData.updated_at,\n    chunk_index: chunkData.chunk_index,\n    chunk_text: chunkData.chunk_text,\n    preview: chunkData.preview,\n    source: chunkData.source,\n    file_name: chunkData.file_name,\n    mime_type: chunkData.mime_type,\n    embedding: vector\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        608
+      ],
+      "id": "22827e74-a89c-474b-82e2-bb1b8d3b85e4",
+      "name": "Attach Embedding to Chunk1"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "abc",
+        "fields": "document_id,title,description,url,created_at,updated_at,chunk_index,chunk_text,preview,source,file_name,mime_type,embedding",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        320
+      ],
+      "id": "2e0a670b-021a-44d4-87e3-c891fb67cd33",
+      "name": "Save to MongoDB1",
+      "credentials": {
+        "mongoDb": {
+          "id": "ZzJUXMnHIa1TDYUK",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -624,
+        1040
+      ],
+      "id": "dcab4c4d-2b6a-475f-b078-98814d2dbec9",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "formTitle": "test",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "upload your file",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -1472,
+        544
+      ],
+      "id": "f34bd855-4859-4d3e-8422-8ea637f4c236",
+      "name": "On form submission1",
+      "webhookId": "03207821-4218-4928-9072-b9744b21a0bd"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1328,
+        1040
+      ],
+      "id": "2b81769f-db7a-4833-901f-aa8cf7e38558",
+      "name": "When chat message received",
+      "webhookId": "0c79cd29-f15f-473d-911e-9412aa503cd8"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "MongoDB Vector Search",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Knowledge Base Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB Vector Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Knowledge Base Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from PDF": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document Metadata1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Document Text": {
+      "main": [
+        [
+          {
+            "node": "Process Chunks Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Chunks Loop": {
+      "main": [
+        [
+          {
+            "node": "Save to MongoDB1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Document Metadata1": {
+      "main": [
+        [
+          {
+            "node": "Chunk Document Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding1": {
+      "main": [
+        [
+          {
+            "node": "Attach Embedding to Chunk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Embedding to Chunk1": {
+      "main": [
+        [
+          {
+            "node": "Process Chunks Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission1": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Base Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "df4d6762-0ba7-4de1-bd3d-ff85d465aa71",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2c05ce0e57908f744f1c45a8eceed8d4ee156a24651a202bf7ce49dc6cb48a3"
+  },
+  "id": "Ja9Um90aS2EvOC8v",
+  "tags": []
+}
