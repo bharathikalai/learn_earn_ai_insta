@@ -1,0 +1,950 @@
+{
+  "name": "backend",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "19e9a0fd-9b96-4295-a815-4ffac05a9503",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -848
+      ],
+      "webhookId": "88daf56a-195b-4879-a30b-ee5fd574d260"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "login",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c28f701b-1359-413e-b977-701a7e6b3383",
+      "name": "Login Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        800
+      ],
+      "webhookId": "b76131bd-7b71-4c8c-9451-13373b16c290"
+    },
+    {
+      "parameters": {
+        "fromEmail": "bharathikalai.bk@gmail.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Your OTP for BK Bharathi Tech Signup",
+        "html": "=<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Welcome to BK Bharathi Tech</title>\n</head>\n<body>\n    <p>Hello {{ $json.name }},</p>\n\n    <p>Welcome to <strong>BK Bharathi Tech</strong>!</p>\n\n    <p>Your OTP for signup verification is: <strong style=\"font-size: 24px; color: #2563eb;\">{{ $json.otp }}</strong></p>\n\n    <p>This OTP will expire in 10 minutes.</p>\n\n    <p>If you didn't request this, please ignore this email.</p>\n\n    <p>Best regards,<br>BK Bharathi Tech Team</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        -112
+      ],
+      "id": "f921bd3c-eb04-4014-9958-f7b91293d7ee",
+      "name": "Send OTP Email",
+      "webhookId": "a25f5bd9-0a0b-4fcd-93f5-fd174b490276",
+      "credentials": {
+        "smtp": {
+          "id": "gPjyqVgBIcEEdrBn",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "signup",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4caad9de-5eb8-41b9-a8f5-d343b92b099f",
+      "name": "Signup Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -112
+      ],
+      "webhookId": "b24c883f-e45c-46de-801a-160ad72a3177"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate 6-digit OTP\nconst otp = Math.floor(100000 + Math.random() * 900000).toString();\n\nreturn [{\n  json: {\n    name: $input.item.json.body.name,\n    email: $input.item.json.body.email,\n    password: $input.item.json.body.password,\n    phone: $input.item.json.body.phone,\n    otp: otp,\n    otpExpiry: new Date(Date.now() + 10 * 60 * 1000).toISOString(),\n    verified: false,\n    timestamp: $input.item.json.body.timestamp\n  }\n}];"
+      },
+      "id": "01045b30-5dc7-490e-8031-fe5942325229",
+      "name": "Generate OTP1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "users",
+        "fields": "=name,email,phone,timestamp,otp,otp_expiry,verified",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        -112
+      ],
+      "id": "ffdeca96-9dd9-4468-9c63-a19413a6488b",
+      "name": "Save User (Signup)1",
+      "credentials": {
+        "mongoDb": {
+          "id": "mXTpIMzK7zJffGcn",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"OTP sent to your email. Please verify to complete signup.\", \"email\": $json.email } }}",
+        "options": {}
+      },
+      "id": "4981b4ae-9f4b-4a4c-8e3e-d02ea1bc86e6",
+      "name": "Respond Signup1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    name: $('Generate OTP1').first().json.name,\n    email: $('Generate OTP1').first().json.email,\n    phone: $('Generate OTP1').first().json.phone,\n    timestamp: $('Generate OTP1').first().json.timestamp,\n    otp: $('Generate OTP1').first().json.otp,\n    \n    otp_expiry: $('Generate OTP1').first().json.otpExpiry,\n    verified: $('Generate OTP1').first().json.verified,\n    timestamp : $('Generate OTP1').first().json.timestamp\n  }\n}];"
+      },
+      "id": "be5f8b99-8230-44f4-82e5-a0cd083d589d",
+      "name": "Extract Body Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "verify-otp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "73b17fa8-fd52-4cce-a5f9-ff0a44fa55d1",
+      "name": "Verify OTP Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        336
+      ],
+      "webhookId": "639cfac8-c9aa-4b12-ba97-31fd66260c33"
+    },
+    {
+      "parameters": {
+        "collection": "users",
+        "options": {
+          "limit": 1
+        },
+        "query": "={{ JSON.stringify({ \"email\": $json.body.email, \"otp\": $json.body.otp }) }}"
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        336
+      ],
+      "id": "8989feb0-9854-45b3-a3d9-72d6d3ead47c",
+      "name": "Find User with OTP",
+      "credentials": {
+        "mongoDb": {
+          "id": "mXTpIMzK7zJffGcn",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "has-results",
+              "leftValue": "={{ $json.email}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "53d73675-3563-416c-a769-0df32b2032c7",
+      "name": "Check User Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        256,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the user data - it's already the document from MongoDB find\nconst user = $input.item.json;\nconst now = new Date();\nconst otpExpiry = new Date(user.otp_expiry);\n\n// Check if OTP expired\nif (now > otpExpiry) {\n  return [{\n    json: {\n      success: false,\n      message: \"OTP has expired\"\n    }\n  }];\n}\n\n// OTP is valid, pass user data forward\nreturn [{\n  json: {\n    _id: user._id,\n    email: user.email,\n    name: user.name\n  }\n}];"
+      },
+      "id": "74caba8e-60a8-414e-8f11-7a3234eb87f0",
+      "name": "Validate OTP Expiry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    success: false,\n    message: \"Invalid email or OTP\"\n  }\n}];"
+      },
+      "id": "4e7914e3-8d45-458b-9f1a-b9b7259978a4",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    success: true,\n    message: \"OTP verified successfully\",\n    user: {\n      email: $json.email,\n      name: $json.name\n    }\n  }\n}];"
+      },
+      "id": "ad9d182c-2017-46f2-a022-29aec205eed9",
+      "name": "Success Response2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "b6ef1628-2d9c-438c-a475-2a531766182d",
+      "name": "Respond Verify4",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "collection": "users",
+        "updateKey": "_id",
+        "fields": "=verified",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        304
+      ],
+      "id": "337acc90-5ad5-4b9a-845a-457cca44bdcf",
+      "name": "Mark as Verified",
+      "credentials": {
+        "mongoDb": {
+          "id": "mXTpIMzK7zJffGcn",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  _id: $input.first().json._id,\n  verified: true\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        304
+      ],
+      "id": "8c065d1d-460c-49ec-aad0-555a533f1513",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "collection": "users",
+        "options": {
+          "limit": 1
+        },
+        "query": "={{ JSON.stringify({ \"email\": $json.body.email, \"otp\": $json.body.otp }) }}"
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        800
+      ],
+      "id": "9deb6040-cd9c-4dff-b6e6-e1d85afa2b5c",
+      "name": "Find User",
+      "credentials": {
+        "mongoDb": {
+          "id": "mXTpIMzK7zJffGcn",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.verified }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        384,
+        800
+      ],
+      "id": "183b2ede-68ad-4a94-9260-013257b3ac80",
+      "name": "Check if Verified"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json ? { \"success\": true, \"message\": \"Login successful\", \"user\": { \"name\": $json.name, \"email\": $json.email, \"phone\": $json.phone } } : { \"success\": false, \"message\": \"Invalid email or password\" } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        640,
+        688
+      ],
+      "id": "1f2e0c01-8631-487e-93c5-7bc80323c720",
+      "name": "Success Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: 'Email not verified. Please verify your email first.' }) }}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        672,
+        912
+      ],
+      "id": "63373ccf-44d8-4c73-9d1e-b732372c16ee",
+      "name": "Error Response1"
+    },
+    {
+      "parameters": {
+        "formTitle": "submit your details",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Your Student ID",
+              "fieldType": "number",
+              "placeholder": "Enter your student id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        1232
+      ],
+      "id": "484b2f3f-1689-443b-8e98-7e00f14263b5",
+      "name": "On form submission",
+      "webhookId": "5804c9e0-a728-4c87-8930-6ef60b72ae70"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "returnBinary",
+        "completionTitle": "12345",
+        "completionMessage": "=Exam mark",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        544,
+        1232
+      ],
+      "id": "2350235a-0e20-4b01-bddf-44381fcbb014",
+      "name": "Form",
+      "webhookId": "02dfdf1c-6879-4380-8609-f33183216bd0"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        1232
+      ],
+      "id": "c5b79c2e-8227-4e94-a2fe-0bc558a84bb2",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      Subject: \"Mathematics\",\n      Marks: 92,\n      Total: 100,\n      Grade: \"A+\"\n    }\n  },\n  {\n    json: {\n      Subject: \"Science\",\n      Marks: 85,\n      Total: 100,\n      Grade: \"A\"\n    }\n  },\n  {\n    json: {\n      Subject: \"English\",\n      Marks: 78,\n      Total: 100,\n      Grade: \"B+\"\n    }\n  },\n  {\n    json: {\n      Subject: \"Computer\",\n      Marks: 88,\n      Total: 100,\n      Grade: \"A\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        1232
+      ],
+      "id": "ccb87179-11f3-4888-a219-26a913539aea",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "content": "## signup\n",
+        "height": 208,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -320,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "ce77a6a5-3ebc-4bf6-b5d5-15a580a58f8d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## otp",
+        "height": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -320,
+        288
+      ],
+      "typeVersion": 1,
+      "id": "abe90ffc-8c34-4784-a871-8ee3dccdd037",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## login",
+        "height": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -320,
+        752
+      ],
+      "typeVersion": 1,
+      "id": "e706c5d6-6460-4264-8d84-ffd28b641264",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## form",
+        "height": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -320,
+        1168
+      ],
+      "typeVersion": 1,
+      "id": "12ebcefb-b118-4115-9b10-51bd4b8b8cb9",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        112,
+        -896
+      ],
+      "id": "b38478e9-37cf-42eb-b4e3-ecf04ebd5415",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        -656
+      ],
+      "id": "10980e9d-8372-4f25-a32c-c528b70c4b2f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FUujskp0MSILNv29",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        -656
+      ],
+      "id": "4247492e-c411-4176-bc8c-00f1305d42e2",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "ed4580e7-fc4d-417a-9abd-9e044ed3388b",
+      "name": "Respond Signup",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -832
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## chatbot\n",
+        "height": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -368,
+        -896
+      ],
+      "typeVersion": 1,
+      "id": "89884e3a-0741-4db7-a1ab-e5324a661eb3",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "formTitle": "signup details",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "name",
+              "placeholder": "enter your name"
+            },
+            {
+              "fieldLabel": "email",
+              "fieldType": "email",
+              "placeholder": "enter your mail id"
+            },
+            {
+              "fieldLabel": "address",
+              "placeholder": "enter your address"
+            },
+            {
+              "fieldLabel": "phone number",
+              "fieldType": "number",
+              "placeholder": "enter your phone number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        112,
+        1760
+      ],
+      "id": "eb770610-4b43-4e02-984e-69af27324355",
+      "name": "On form submission1",
+      "webhookId": "a706e817-709b-4073-9053-8ab9c43d24a8"
+    },
+    {
+      "parameters": {
+        "content": "## form node",
+        "height": 416,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -48,
+        1616
+      ],
+      "typeVersion": 1,
+      "id": "8ad448c9-b8ee-4c79-a15b-86250e584c1e",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        1472
+      ],
+      "id": "b9bfd925-dee2-4110-880a-452f94e9d74b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "content": "## event trigger",
+        "height": 384,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1408,
+        1360
+      ],
+      "typeVersion": 1,
+      "id": "feb43d8e-db4c-4e5d-95f2-53fb736761c7",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login Webhook": {
+      "main": [
+        [
+          {
+            "node": "Find User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send OTP Email": {
+      "main": [
+        [
+          {
+            "node": "Extract Body Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signup Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Generate OTP1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate OTP1": {
+      "main": [
+        [
+          {
+            "node": "Send OTP Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save User (Signup)1": {
+      "main": [
+        [
+          {
+            "node": "Respond Signup1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Body Data1": {
+      "main": [
+        [
+          {
+            "node": "Save User (Signup)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify OTP Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Find User with OTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find User with OTP": {
+      "main": [
+        [
+          {
+            "node": "Check User Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check User Found": {
+      "main": [
+        [
+          {
+            "node": "Validate OTP Expiry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate OTP Expiry": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Verify4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Response2": {
+      "main": [
+        [
+          {
+            "node": "Respond Verify4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Mark as Verified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Verified": {
+      "main": [
+        [
+          {
+            "node": "Success Response2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find User": {
+      "main": [
+        [
+          {
+            "node": "Check if Verified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Verified": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond Signup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c9d5fd45-79af-4bde-a2d3-764778e35afe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "981bff7abaa7c109f70126ea3c174345d7b0002b6b13b7f41cbf9cfe7f75cd21"
+  },
+  "id": "Sx7GMMc0MUzkOqdL",
+  "tags": []
+}
