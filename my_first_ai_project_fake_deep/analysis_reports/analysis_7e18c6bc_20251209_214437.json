@@ -1,0 +1,50 @@
+{
+  "file_path": "gemini.png",
+  "file_hash": "7e18c6bccd926228dcbfd680f508f031f78b2cd6c95b3980e013e355835e66b5",
+  "verdict": "ai_generated",
+  "confidence_score": 95.0,
+  "risk_level": "critical",
+  "reasoning": "The image metadata indicates it is AI-generated due to the presence of specific AI generation indicators. The XMP data explicitly states 'trainedAlgorithmicMedia' for both DigitalSourceFileType and DigitalSourceType, and the Credit field mentions 'Made with Google AI'. Additionally, there is no EXIF data or camera information present, which is typical for AI-generated images.",
+  "key_findings": [
+    "DigitalSourceType is 'trainedAlgorithmicMedia'",
+    "Credit field contains 'Made with Google AI'",
+    "No EXIF data present",
+    "No camera manufacturer or model information"
+  ],
+  "ai_model_detected": "Gemini",
+  "camera_detected": null,
+  "metadata_summary": {
+    "has_exif": false,
+    "has_xmp": true,
+    "has_gps": false,
+    "camera_make": null,
+    "camera_model": null,
+    "software": null,
+    "date_time": null
+  },
+  "full_metadata": {
+    "basic_info": {
+      "filename": "gemini.png",
+      "format": "PNG",
+      "mode": "RGB",
+      "size": [
+        1024,
+        1024
+      ],
+      "width": 1024,
+      "height": 1024
+    },
+    "exif_data": {},
+    "gps_data": {},
+    "xmp_data": {
+      "about": "",
+      "DateTimeOriginal": "2025-12-07T02:09:56+00:00",
+      "DigitalSourceFileType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+      "DigitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+      "Credit": "Made with Google AI",
+      "DateCreated": "2025-12-07T02:09:56+00:00"
+    }
+  },
+  "timestamp": "2025-12-09T21:44:37.097388",
+  "analysis_time_ms": 5363.23
+}

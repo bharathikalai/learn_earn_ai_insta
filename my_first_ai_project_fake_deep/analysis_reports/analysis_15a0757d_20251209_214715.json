@@ -1,0 +1,43 @@
+{
+  "file_path": "openai.png",
+  "file_hash": "15a0757d75dbb925905dfa6f5340356cfcd79830ebb5eb56e248075d6ea789d6",
+  "verdict": "ai_generated",
+  "confidence_score": 85.0,
+  "risk_level": "high",
+  "reasoning": "The image lacks any EXIF, XMP, or GPS data, which are typically present in authentic images captured by real cameras. The absence of camera manufacturer and model information, along with the lack of any metadata, strongly suggests AI generation. Additionally, the PNG format is commonly used for AI-generated images.",
+  "key_findings": [
+    "No EXIF data present",
+    "No camera manufacturer or model information",
+    "PNG format commonly used for AI-generated images",
+    "No GPS data"
+  ],
+  "ai_model_detected": null,
+  "camera_detected": null,
+  "metadata_summary": {
+    "has_exif": false,
+    "has_xmp": false,
+    "has_gps": false,
+    "camera_make": null,
+    "camera_model": null,
+    "software": null,
+    "date_time": null
+  },
+  "full_metadata": {
+    "basic_info": {
+      "filename": "openai.png",
+      "format": "PNG",
+      "mode": "RGB",
+      "size": [
+        1024,
+        1536
+      ],
+      "width": 1024,
+      "height": 1536
+    },
+    "exif_data": {},
+    "gps_data": {},
+    "xmp_data": {}
+  },
+  "timestamp": "2025-12-09T21:47:15.435205",
+  "analysis_time_ms": 5728.27
+}

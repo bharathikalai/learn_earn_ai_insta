@@ -1,0 +1,45 @@
+{
+  "file_path": "oie_cv3CWa2L9tY3.png",
+  "file_hash": "80144f3d9f016a4b40d6b9c412fa44efbc80c9b076951806424e02aeb065a9fc",
+  "verdict": "ai_generated",
+  "confidence_score": 90.0,
+  "risk_level": "high",
+  "reasoning": "The image lacks any EXIF, XMP, or GPS data, which is highly unusual for images captured by real cameras. The absence of camera manufacturer and model information, combined with the PNG format and no metadata, strongly suggests AI generation.",
+  "key_findings": [
+    "No EXIF data present",
+    "No camera manufacturer or model information",
+    "PNG format often used for AI-generated images"
+  ],
+  "ai_model_detected": null,
+  "camera_detected": null,
+  "metadata_summary": {
+    "has_exif": false,
+    "has_xmp": false,
+    "has_gps": false,
+    "camera_make": null,
+    "camera_model": null,
+    "software": null,
+    "date_time": null
+  },
+  "full_metadata": {
+    "basic_info": {
+      "filename": "oie_cv3CWa2L9tY3.png",
+      "format": "PNG",
+      "mode": "RGBA",
+      "size": [
+        978,
+        865
+      ],
+      "width": 978,
+      "height": 865,
+      "gamma": "0.45455",
+      "chromaticity": "(0.3127, 0.329, 0.64, 0.33, 0.3, 0.6, 0.15, 0.06)",
+      "aspect": "(72, 72)"
+    },
+    "exif_data": {},
+    "gps_data": {},
+    "xmp_data": {}
+  },
+  "timestamp": "2025-12-09T21:46:00.871939",
+  "analysis_time_ms": 4208.95
+}
